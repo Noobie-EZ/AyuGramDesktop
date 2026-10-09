@@ -229,15 +229,18 @@ jobs:
         run: |
           cd %TBUILD%\%REPO_NAME%\Telegram
 
+          rem Ninja, not MSBuild: MSBuild + /MP ran out of the runner's 16 GB on
+          rem the huge qrc_emoji_*.cpp in Release. With -G the arch comes from vcvars.
           call configure.bat ^
-          x64 ^
+          -G "Ninja Multi-Config" ^
           -D TDESKTOP_API_ID=%API_ID% ^
           -D TDESKTOP_API_HASH=%API_HASH% ^
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D CMAKE_CONFIGURATION_TYPES=Release
 
           rem No special target: autoupdate and crash reports are off by default.
-          cmake --build ..\out --config Release --parallel
+          rem ponytail: 4 jobs = 4 vCPU; drop to 2 if cl.exe itself runs out of memory.
+          cmake --build ..\out --config Release --parallel 4
 
       - uses: actions/upload-artifact@v7
         name: Upload artifact.
